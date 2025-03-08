@@ -13,14 +13,14 @@ PAYPAY_LINK_REGEX = r"^https://pay\.paypay\.ne\.jp/[a-zA-Z0-9]+$"
 def create_embed(title, description, color):
     return discord.Embed(title=title, description=description, color=color)
 
-@bot.tree.command(name="add_balance", description="自分の口座に残高を追加")
+@bot.tree.command(name="payin", description="自分の口座に残高を追加")
 @app_commands.describe(link="PayPayリンクを入力してください")
-async def add_balance(interaction: discord.Interaction, link: str):
+async def payin(interaction: discord.Interaction, link: str):
     user_id = interaction.user.id
     user_info = users_collection.find_one({"user_id": user_id})
 
     if not user_info:
-        embed = create_embed("", "あなたの口座が見つかりません。\n `/register` で口座を開設してください。", discord.Color.red())
+        embed = create_embed("", "あなたの口座が見つかりません。\n `/kouza` で口座を開設してください。", discord.Color.red())
         await interaction.response.send_message(embed=embed, ephemeral=True)
         return
 
@@ -60,10 +60,10 @@ async def add_balance(interaction: discord.Interaction, link: str):
     paypay_session.paypay.link_receive(link)
     update_user_balance(user_id, int(net_amount))
     
-    log_transaction(user_id, "deposit", int(amount), int(fee), int(net_amount))
-    embed = discord.Embed(title="💰 入金完了", color=discord.Color.green())
-    embed.add_field(name="📥 **入金額**", value=f"`{int(amount):,}pay`", inline=True)
-    embed.add_field(name="💸 **手数料**", value=f"`{int(fee):,}pay`", inline=True)
-    embed.add_field(name="💰 **現在の残高**", value=f"`{get_user_balance(user_id):,}pnc`", inline=False)
+    log_transaction(user_id, "in", int(amount), int(fee), int(net_amount))
+    embed = discord.Embed(title="入金完了", color=discord.Color.green())
+    embed.add_field(name="**入金額**", value=f"`{int(amount):,} pay`", inline=True)
+    embed.add_field(name="**手数料**", value=f"`{int(fee):,} pay`", inline=True)
+    embed.add_field(name="**現在の残高**", value=f"`{get_user_balance(user_id):,} pnc`", inline=False)
 
     await interaction.response.send_message(embed=embed, ephemeral=True)

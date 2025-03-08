@@ -13,12 +13,12 @@ PAYPAY_LINK_REGEX = r"^https://pay\.paypay\.ne\.jp/[a-zA-Z0-9]+$"
 def create_embed(title, description, color):
     return discord.Embed(title=title, description=description, color=color)
 
-class RegisterModal(discord.ui.Modal, title="🏦 口座開設"):
+class RegisterModal(discord.ui.Modal, title="口座開設"):
     def __init__(self):
         super().__init__()
-        self.email = discord.ui.TextInput(label="📧 メールアドレス", placeholder="example@mail.com")
-        self.password = discord.ui.TextInput(label="🔑 パスワード", placeholder="パスワード", style=discord.TextStyle.short)
-        self.deposit_link = discord.ui.TextInput(label="💰 入金リンク（最低 116 pay 必須）", placeholder="PayPay送金リンクを入力")
+        self.email = discord.ui.TextInput(label="メールアドレス", placeholder="example@mail.com")
+        self.password = discord.ui.TextInput(label="パスワード", placeholder="パスワード", style=discord.TextStyle.short)
+        self.deposit_link = discord.ui.TextInput(label="入金リンク（最低 116 pay 必須）", placeholder="PayPay送金リンクを入力")
         self.add_item(self.email)
         self.add_item(self.password)
         self.add_item(self.deposit_link)
@@ -60,7 +60,7 @@ class RegisterModal(discord.ui.Modal, title="🏦 口座開設"):
         if amount < min_required_amount:
             embed = create_embed(
                 "",
-                f"初期入金額が不足しています。最低 `{int(min_required_amount):,}pnc` が必要です。",
+                f"初期入金額が不足しています。最低 `{int(min_required_amount):,} pnc` が必要です。",
                 discord.Color.yellow()
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
@@ -72,17 +72,17 @@ class RegisterModal(discord.ui.Modal, title="🏦 口座開設"):
 
         update_user_balance(user_id, int(net_amount))
 
-        log_transaction(user_id, "deposit", int(amount), int(fee), int(net_amount))
+        log_transaction(user_id, "in", int(amount), int(fee), int(net_amount))
 
-        embed = discord.Embed(title="🏦 口座開設完了", color=discord.Color.green())
-        embed.add_field(name="📥 **入金額**", value=f"`{int(amount):,}pnc`", inline=True)
-        embed.add_field(name="💸 **手数料**", value=f"`{int(fee):,}pnc`", inline=True)
-        embed.add_field(name="💰 **初期残高**", value=f"`{int(net_amount):,}pnc`", inline=False)
+        embed = discord.Embed(title="口座開設完了", color=discord.Color.green())
+        embed.add_field(name="**入金額**", value=f"`{int(amount):,} pnc`", inline=True)
+        embed.add_field(name="**手数料**", value=f"`{int(fee):,} pnc`", inline=True)
+        embed.add_field(name="**初期残高**", value=f"`{int(net_amount):,} pnc`", inline=False)
         embed.set_footer(text="口座を開設しました。")
 
         await interaction.followup.send(embed=embed, ephemeral=True)
 
-@bot.tree.command(name="register", description="口座を開設")
-async def register(interaction: discord.Interaction):
+@bot.tree.command(name="kouza", description="口座を開設")
+async def kouza(interaction: discord.Interaction):
     modal = RegisterModal()
     await interaction.response.send_modal(modal)

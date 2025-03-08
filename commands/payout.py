@@ -12,19 +12,14 @@ PAYPAY_LINK_REGEX = r"^https://pay\.paypay\.ne\.jp/[a-zA-Z0-9]+$"
 def create_embed(title, description, color):
     return discord.Embed(title=title, description=description, color=color)
 
-@bot.tree.command(name="withdraw", description="指定した額を引き出し（PayPayに送金）")
-@app_commands.describe(amount="出金額（手数料は自動計算）", link="PayPay送金リンクを入力")
-async def withdraw(interaction: discord.Interaction, amount: int, link: str):
+@bot.tree.command(name="payout", description="指定した額を引き出し（PayPayに送金）")
+@app_commands.describe(amount="出金額（手数料は自動計算）")
+async def payout(interaction: discord.Interaction, amount: int):
     user_id = interaction.user.id
     sender_info = users_collection.find_one({"user_id": user_id})
 
     if sender_info is None or "sender_external_id" not in sender_info:
         embed = create_embed("", "あなたの口座が見つかりません。\n `/register` で口座を開設してください。", discord.Color.red())
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-        return
-
-    if not re.match(PAYPAY_LINK_REGEX, link):
-        embed = create_embed("", "無効なリンクです。有効な PayPay リンクを入力してください。", discord.Color.red())
         await interaction.response.send_message(embed=embed, ephemeral=True)
         return
 
@@ -34,7 +29,7 @@ async def withdraw(interaction: discord.Interaction, amount: int, link: str):
     if user_balance is None or user_balance < MIN_INITIAL_DEPOSIT:
         embed = create_embed(
             "",
-            f"出金するには最低 `{MIN_INITIAL_DEPOSIT:,}pnc` の残高が必要です。",
+            f"出金するには最低 `{MIN_INITIAL_DEPOSIT:,} pnc` の残高が必要です。",
             discord.Color.yellow()
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -45,7 +40,7 @@ async def withdraw(interaction: discord.Interaction, amount: int, link: str):
     if amount > max_withdrawable:
         embed = create_embed(
             "",
-            f"現在の最大出金可能額は `{int(max_withdrawable):,}pnc` です。",
+            f"現在の最大出金可能額は `{int(max_withdrawable):,} pnc` です。",
             discord.Color.yellow()
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -67,14 +62,14 @@ async def withdraw(interaction: discord.Interaction, amount: int, link: str):
 
     update_user_balance(user_id, -int(total_deduction))
 
-    log_transaction(user_id, "withdraw", int(amount), int(fee), int(total_deduction), sender_external_id)
+    log_transaction(user_id, "out", int(amount), int(fee), int(total_deduction), sender_external_id)
 
-    embed = discord.Embed(title="💰 出金完了", color=discord.Color.green())
-    embed.add_field(name="📤 **出金額**", value=f"`{int(amount):,}pnc`", inline=True)
-    embed.add_field(name="💸 **手数料**", value=f"`{int(fee):,}pnc`", inline=True)
-    embed.add_field(name="💰 **合計引き落とし**", value=f"`{int(total_deduction):,}pnc`", inline=False)
-    embed.add_field(name="📩 **送金先**", value=f"`{sender_external_id}`", inline=False)
-    embed.add_field(name="📌 **最大出金可能額**", value=f"`{int(max_withdrawable):,}pnc`", inline=True)
-    embed.set_footer(text=f"現在の残高: {get_user_balance(user_id):,}pnc")
+    embed = discord.Embed(title="出金完了", color=discord.Color.green())
+    embed.add_field(name="**出金額**", value=f"`{int(amount):,} pnc`", inline=True)
+    embed.add_field(name="**手数料**", value=f"`{int(fee):,} pnc`", inline=True)
+    embed.add_field(name="**合計引き落とし**", value=f"`{int(total_deduction):,} pnc`", inline=False)
+    embed.add_field(name="**出金先**", value=f"`{sender_external_id}`", inline=False)
+    embed.add_field(name="**最大出金可能額**", value=f"`{int(max_withdrawable):,} pnc`", inline=True)
+    embed.set_footer(text=f"現在の残高: {get_user_balance(user_id):,} pnc")
 
     await interaction.response.send_message(embed=embed, ephemeral=True)

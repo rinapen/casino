@@ -48,7 +48,7 @@ def log_transaction(user_id, type, amount, fee, total, receiver=None):
 
     transaction = {
         "user_id": user_id,
-        "type": type,  # "deposit", "withdraw", "transfer"
+        "type": type,  # "in", "out", "transfer"
         "amount": amount,
         "fee": fee,
         "total": total,
