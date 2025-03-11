@@ -1,6 +1,6 @@
 import discord
 from discord import app_commands
-from database import transactions_collection
+from database import user_transactions_collection
 from bot import bot
 from config import BASE_COLOR_CODE
 PAGE_SIZE = 5
@@ -8,7 +8,7 @@ PAGE_SIZE = 5
 @bot.tree.command(name="rireki", description="取引明細を表示")
 async def rireki(interaction: discord.Interaction):
     user_id = interaction.user.id
-    transactions = list(transactions_collection.find({"user_id": user_id}).sort("timestamp", -1))
+    transactions = list(user_transactions_collection.find({"user_id": user_id}).sort("timestamp", -1))
 
     if not transactions:
         embed = discord.Embed(title="取引履歴", description="取引履歴がありません。", color=discord.Color.dark_gray())
