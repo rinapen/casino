@@ -1,8 +1,16 @@
 import discord
 from discord import app_commands
-from database import get_user_balance, users_collection, user_transactions_collection
+from database import users_collection, user_transactions_collection
 from bot import bot
 from utils import create_embed
+import datetime
+
+def get_user_balance(user_id):
+    """ ユーザーの残高を取得（新しいデータ構造に対応） """
+    user_info = users_collection.find_one({"user_id": user_id})
+    if not user_info or "transactions" not in user_info:
+        return 0
+    return sum(txn["total"] for txn in user_info["transactions"])
 
 @bot.tree.command(name="zandaka", description="口座残高を表示")
 async def zandaka(interaction: discord.Interaction):
@@ -15,16 +23,17 @@ async def zandaka(interaction: discord.Interaction):
         return
 
     balance = get_user_balance(user_id)
+    embed = discord.Embed(title="口座残高", description=f"# {balance:,} PNC", color=discord.Color.green())
 
-    embed = discord.Embed(title="口座残高", description=f"# {balance:,}PNC",color=discord.Color.green())
-
-    transactions = list(user_transactions_collection.find({"user_id": user_id}).sort("timestamp", -1).limit(5))
-
+    transactions = user_info.get("transactions", [])[-5:]
+    
     if transactions:
         history_text = ""
-        for txn in transactions:
+        for txn in reversed(transactions):
             type_emoji = "📥" if txn["type"] == "in" else "📤" if txn["type"] == "out" else "🔄"
-            history_text += f"{type_emoji} `{txn['timestamp'].strftime('%Y-%m-%d %H:%M:%S')}` - `{txn['type'].capitalize()}`: `{txn['amount']:,} pnc`\n"
+            timestamp = datetime.datetime.fromtimestamp(txn["timestamp"] / 1000)
+            history_text += f"{type_emoji} `{timestamp.strftime('%Y-%m-%d %H:%M:%S')}` - `{txn['type'].capitalize()}`: `{txn['total']:,} PNC`\n"
+
         embed.add_field(name="**直近の取引履歴**", value=history_text, inline=False)
     else:
         embed.add_field(name="**直近の取引履歴**", value="取引履歴がありません。", inline=False)

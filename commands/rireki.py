@@ -1,20 +1,23 @@
 import discord
 from discord import app_commands
-from database import user_transactions_collection
+from database import users_collection
 from bot import bot
 from config import BASE_COLOR_CODE
+import datetime
+
 PAGE_SIZE = 5
 
 @bot.tree.command(name="rireki", description="取引明細を表示")
 async def rireki(interaction: discord.Interaction):
     user_id = interaction.user.id
-    transactions = list(user_transactions_collection.find({"user_id": user_id}).sort("timestamp", -1))
+    user_info = users_collection.find_one({"user_id": user_id})
 
-    if not transactions:
+    if not user_info or "transactions" not in user_info:
         embed = discord.Embed(title="取引履歴", description="取引履歴がありません。", color=discord.Color.dark_gray())
         await interaction.response.send_message(embed=embed, ephemeral=True)
         return
 
+    transactions = user_info["transactions"]
     await send_transaction_history(interaction, user_id, transactions, page=0)
 
 async def send_transaction_history(interaction, user_id, transactions, page):
@@ -24,13 +27,14 @@ async def send_transaction_history(interaction, user_id, transactions, page):
 
     embed = discord.Embed(title="取引履歴", color=BASE_COLOR_CODE)
 
-    for txn in current_transactions:
-        type_emoji = "📥" if txn["type"] == "deposit" else "📤" if txn["type"] == "withdraw" else "🔄"
+    for txn in reversed(current_transactions):
+        type_emoji = "📥" if txn["type"] == "in" else "📤" if txn["type"] == "out" else "🔄"
+        timestamp = datetime.datetime.fromtimestamp(txn["timestamp"] / 1000)
         embed.add_field(
-            name=f"{type_emoji} `{txn['type'].capitalize()}` - `{txn['timestamp'].strftime('%Y-%m-%d %H:%M:%S')}`",
-            value=f"💰 **金額**: `{txn['amount']} pnc`\n"
-                  f"💸 **手数料**: `{txn['fee']} pnc`\n"
-                  f"📊 **合計**: `{txn['total']} pnc`",
+            name=f"{type_emoji} `{txn['type'].capitalize()}` - `{timestamp.strftime('%Y-%m-%d %H:%M:%S')}`",
+            value=f"💰 **金額**: `{txn['amount']}PNC`\n"
+                  f"💸 **手数料**: `{txn['fee']}PNC`\n"
+                  f"📊 **合計**: `{txn['total']}PNC`",
             inline=False
         )
 
