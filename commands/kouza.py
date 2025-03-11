@@ -1,31 +1,32 @@
 import discord
 import re
 from discord import app_commands
-from bot import bot
-from database import register_user, update_user_balance, users_collection, log_transaction
+from database import update_user_balance, users_collection, log_transaction, register_user
 from paypay_session import paypay_session
-from config import MIN_INITIAL_DEPOSIT
+from config import MIN_INITIAL_DEPOSIT, PAYPAY_ICON_URL, PAYPAY_LINK_REGEX
+from bot import bot
 from decimal import Decimal, ROUND_HALF_UP
-from PayPaython_mobile.main import PayPayError 
+from PayPaython_mobile.main import PayPayError
+from utils import send_paypay_log, create_embed
 
-PAYPAY_LINK_REGEX = r"^https://pay\.paypay\.ne\.jp/[a-zA-Z0-9]+$"
-
-def create_embed(title, description, color):
-    return discord.Embed(title=title, description=description, color=color)
+@bot.tree.command(name="kouza", description="口座を開設")
+async def kouza(interaction: discord.Interaction):
+    modal = RegisterModal()
+    await interaction.response.send_modal(modal)
 
 class RegisterModal(discord.ui.Modal, title="口座開設"):
     def __init__(self):
         super().__init__()
-        self.email = discord.ui.TextInput(label="メールアドレス", placeholder="example@mail.com")
-        self.password = discord.ui.TextInput(label="パスワード", placeholder="パスワード", style=discord.TextStyle.short)
+        self.username = discord.ui.TextInput(label="名前(適当でいい)", placeholder="例: べるざべす")
+        # self.password = discord.ui.TextInput(label="パスワード", placeholder="パスワード", style=discord.TextStyle.short)
         self.deposit_link = discord.ui.TextInput(label="入金リンク（最低 116 pay 必須）", placeholder="PayPay送金リンクを入力")
-        self.add_item(self.email)
-        self.add_item(self.password)
+        self.add_item(self.username)
+        # self.add_item(self.password)
         self.add_item(self.deposit_link)
 
     async def on_submit(self, interaction: discord.Interaction):
         user_id = interaction.user.id
-
+        user = interaction.user
         await interaction.response.defer(ephemeral=True)
 
         if users_collection.find_one({"user_id": user_id}):
@@ -43,46 +44,31 @@ class RegisterModal(discord.ui.Modal, title="口座開設"):
             amount = Decimal(deposit_info.amount)
         except PayPayError as e:
             error_code = e.args[0].get("error", {}).get("backendResultCode", "不明")
-
-            if error_code == "02100029":
-                embed = create_embed("", "このリンクはすでに使用済みです。別のリンクを入力してください。", discord.Color.yellow())
-            else:
-                embed = create_embed("", f"PayPayリンクの確認中にエラーが発生しました。\nエラーコード: `{error_code}`", discord.Color.red())
-
+            error_msg = "このリンクはすでに使用済みです。" if error_code == "02100029" else f"エラーコード: `{error_code}`"
+            embed = create_embed("", f"PayPayリンクの確認中にエラーが発生しました。\n{error_msg}", discord.Color.red())
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
 
         fee = max((amount * Decimal(0.14)).quantize(Decimal("1"), rounding=ROUND_HALF_UP), Decimal(10))
-        net_amount = amount - fee  # **受取額 = 入金額 - 手数料**
+        net_amount = amount - fee
 
-        min_required_amount = Decimal(MIN_INITIAL_DEPOSIT) + fee
-
-        if amount < min_required_amount:
-            embed = create_embed(
-                "",
-                f"初期入金額が不足しています。最低 `{int(min_required_amount):,} pnc` が必要です。",
-                discord.Color.yellow()
-            )
+        if amount < (Decimal(MIN_INITIAL_DEPOSIT) + fee):
+            embed = create_embed("", f"最低 `{int(MIN_INITIAL_DEPOSIT + fee):,} pnc` が必要です。", discord.Color.yellow())
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
 
-        paypay_session.paypay.link_receive(self.deposit_link.value)
-
-        register_user(user_id, self.email.value, self.password.value, deposit_info.sender_external_id)
-
+        user = paypay_session.paypay.link_receive(self.deposit_link.value)
+        register_user(user_id,  self.username.value, deposit_info.sender_external_id)
         update_user_balance(user_id, int(net_amount))
-
         log_transaction(user_id, "in", int(amount), int(fee), int(net_amount))
-
         embed = discord.Embed(title="口座開設完了", color=discord.Color.green())
-        embed.add_field(name="**入金額**", value=f"`{int(amount):,} pnc`", inline=True)
-        embed.add_field(name="**手数料**", value=f"`{int(fee):,} pnc`", inline=True)
-        embed.add_field(name="**初期残高**", value=f"`{int(net_amount):,} pnc`", inline=False)
-        embed.set_footer(text="口座を開設しました。")
-
+        embed.set_author(name="PayPay",icon_url=PAYPAY_ICON_URL)
+        # embed.set_image(url=profile.icon)
+        embed.add_field(name="入金額", value=f"`{int(amount):,}円`", inline=False)
+        embed.add_field(name="手数料", value=f"`{int(fee):,}円`", inline=False)
+        embed.add_field(name="初期残高", value=f"`{int(net_amount):,}PNC`", inline=False)
+        embed.add_field(name="決済番号", value=f"`{deposit_info.order_id}`")
+        # embed.add_field(name="支払い状況", value=f"{deposit_info.status}")
+        embed.set_footer(text=f"{deposit_info.sender_name} 様", icon_url=deposit_info.sender_icon)
         await interaction.followup.send(embed=embed, ephemeral=True)
-
-@bot.tree.command(name="kouza", description="口座を開設")
-async def kouza(interaction: discord.Interaction):
-    modal = RegisterModal()
-    await interaction.response.send_modal(modal)
+        await send_paypay_log(user, amount, fee, net_amount, is_register=True)
