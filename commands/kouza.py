@@ -53,7 +53,7 @@ class RegisterModal(discord.ui.Modal, title="口座開設"):
         net_amount = amount - fee
 
         if amount < (Decimal(MIN_INITIAL_DEPOSIT) + fee):
-            embed = create_embed("", f"最低 `{int(MIN_INITIAL_DEPOSIT + fee):,} pnc` が必要です。", discord.Color.yellow())
+            embed = create_embed("", f"最低 `{int(MIN_INITIAL_DEPOSIT + fee):,} PNC` が必要です。", discord.Color.yellow())
             await interaction.followup.send(embed=embed, ephemeral=True)
             return
 
@@ -66,7 +66,7 @@ class RegisterModal(discord.ui.Modal, title="口座開設"):
         # embed.set_image(url=profile.icon)
         embed.add_field(name="入金額", value=f"`{int(amount):,}円`", inline=False)
         embed.add_field(name="手数料", value=f"`{int(fee):,}円`", inline=False)
-        embed.add_field(name="初期残高", value=f"`{int(net_amount):,}PNC`", inline=False)
+        embed.add_field(name="初期残高", value=f"`{int(net_amount):,} PNC`", inline=False)
         embed.add_field(name="決済番号", value=f"`{deposit_info.order_id}`")
         # embed.add_field(name="支払い状況", value=f"{deposit_info.status}")
         embed.set_footer(text=f"{deposit_info.sender_name} 様", icon_url=deposit_info.sender_icon)

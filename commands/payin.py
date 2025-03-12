@@ -48,7 +48,7 @@ async def payin(interaction: discord.Interaction, link: str):
     net_amount = amount - fee 
 
     if amount < (Decimal(MIN_INITIAL_DEPOSIT) + fee):
-        embed = create_embed("", f"最低入金額は `{int(MIN_INITIAL_DEPOSIT + fee):,}PNC` です。", discord.Color.yellow())
+        embed = create_embed("", f"最低入金額は `{int(MIN_INITIAL_DEPOSIT + fee):,} PNC` です。", discord.Color.yellow())
         await interaction.response.send_message(embed=embed, ephemeral=True)
         return
 
@@ -61,7 +61,7 @@ async def payin(interaction: discord.Interaction, link: str):
         embed = discord.Embed(title="入金完了", color=discord.Color.green())
         embed.add_field(name="入金額", value=f"`{int(amount):,}円`", inline=True)
         embed.add_field(name="手数料", value=f"`{int(fee):,}円`", inline=True)
-        embed.add_field(name="現在の残高", value=f"`{get_user_balance(user_id):,}PNC`", inline=False)
+        embed.add_field(name="現在の残高", value=f"`{get_user_balance(user_id):,} PNC`", inline=False)
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
         await send_paypay_log(user, amount, fee, net_amount)

@@ -24,7 +24,7 @@ async def payout(interaction: discord.Interaction, amount: int):
     if user_balance is None or user_balance < MIN_INITIAL_DEPOSIT:
         embed = create_embed(
             "",
-            f"出金するには最低 `{MIN_INITIAL_DEPOSIT:,}PNC` の残高が必要です。",
+            f"出金するには最低 `{MIN_INITIAL_DEPOSIT:,} PNC` の残高が必要です。",
             discord.Color.yellow()
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -35,7 +35,7 @@ async def payout(interaction: discord.Interaction, amount: int):
     if amount > max_withdrawable:
         embed = create_embed(
             "",
-            f"現在の最大出金可能額は `{int(max_withdrawable):,}PNC` です。",
+            f"現在の最大出金可能額は `{int(max_withdrawable):,} PNC` です。",
             discord.Color.yellow()
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -47,7 +47,7 @@ async def payout(interaction: discord.Interaction, amount: int):
     if user_balance < total_deduction:
         embed = create_embed(
             "",
-            f"手数料込みで `{int(total_deduction):,}PNC` が必要ですが、残高が不足しています。",
+            f"手数料込みで `{int(total_deduction):,} PNC` が必要ですが、残高が不足しています。",
             discord.Color.red()
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -61,9 +61,9 @@ async def payout(interaction: discord.Interaction, amount: int):
     embed = discord.Embed(title="出金完了", color=discord.Color.green())
     embed.add_field(name="出金額", value=f"`{int(amount):,}円`", inline=False)
     embed.add_field(name="手数料", value=f"`{int(fee):,}円`", inline=False)
-    embed.add_field(name="合計引き落とし", value=f"`{int(total_deduction):,}PNC`", inline=False)
+    embed.add_field(name="合計引き落とし", value=f"`{int(total_deduction):,} PNC`", inline=False)
     embed.add_field(name="出金先", value=f"`{sender_external_id}`", inline=False)
-    embed.add_field(name="最大出金可能額", value=f"`{int(max_withdrawable):,}PNC`", inline=False)
-    embed.set_footer(text=f"現在の残高: {get_user_balance(user_id):,}PNC")
+    embed.add_field(name="最大出金可能額", value=f"`{int(max_withdrawable):,} PNC`", inline=False)
+    embed.set_footer(text=f"現在の残高: {get_user_balance(user_id):,} PNC")
 
     await interaction.response.send_message(embed=embed, ephemeral=True)

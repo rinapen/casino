@@ -33,7 +33,7 @@ async def send(interaction: discord.Interaction, amount: int, recipient: discord
     total_deduction = amount + fee  
 
     if sender_balance < total_deduction:
-        embed = create_embed(title="", description=f"手数料込みで {total_deduction}PNC が必要ですが、残高が不足しています。", color=discord.Color.red())
+        embed = create_embed(title="", description=f"手数料込みで {total_deduction} PNC が必要ですが、残高が不足しています。", color=discord.Color.red())
         await interaction.response.send_message(embed=embed, ephemeral=True)
         return
 
@@ -42,18 +42,18 @@ async def send(interaction: discord.Interaction, amount: int, recipient: discord
     log_transaction(user_id, "send", amount, fee, total_deduction, recipient_id)
 
     embed = discord.Embed(title="🔄 送金完了", color=discord.Color.blue())
-    embed.add_field(name="送金額", value=f"{amount}PNC", inline=False)
-    embed.add_field(name="手数料", value=f"{fee}PNC", inline=False)
-    embed.add_field(name="合計引き落とし", value=f"{total_deduction}PNC", inline=False)
+    embed.add_field(name="送金額", value=f"{amount} PNC", inline=False)
+    embed.add_field(name="手数料", value=f"{fee} PNC", inline=False)
+    embed.add_field(name="合計引き落とし", value=f"{total_deduction} PNC", inline=False)
     embed.add_field(name="受取人", value=f"{recipient.display_name}({recipient.name}) 様", inline=False)
-    embed.set_footer(text=f"現在の残高: {get_user_balance(user_id)}PNC")
+    embed.set_footer(text=f"現在の残高: {get_user_balance(user_id)} PNC")
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
     try:
         await recipient.send(
-            f"**{interaction.user.display_name}** から `{amount:,}PNC` を受け取りました！\n"
-            f"**現在の残高**: `{get_user_balance(recipient_id):,}PNC`"
+            f"**{interaction.user.display_name}** から `{amount:,} PNC` を受け取りました！\n"
+            f"**現在の残高**: `{get_user_balance(recipient_id):,} PNC`"
         )
     except discord.Forbidden:
         await interaction.response.send_message(

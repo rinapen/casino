@@ -32,9 +32,9 @@ async def send_transaction_history(interaction, user_id, transactions, page):
         timestamp = datetime.datetime.fromtimestamp(txn["timestamp"] / 1000)
         embed.add_field(
             name=f"{type_emoji} `{txn['type'].capitalize()}` - `{timestamp.strftime('%Y-%m-%d %H:%M:%S')}`",
-            value=f"💰 **金額**: `{txn['amount']}PNC`\n"
-                  f"💸 **手数料**: `{txn['fee']}PNC`\n"
-                  f"📊 **合計**: `{txn['total']}PNC`",
+            value=f"💰 **金額**: `{txn['amount']} PNC`\n"
+                  f"💸 **手数料**: `{txn['fee']} PNC`\n"
+                  f"📊 **合計**: `{txn['total']} PNC`",
             inline=False
         )
 
