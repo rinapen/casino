@@ -7,7 +7,8 @@ from config import MIN_INITIAL_DEPOSIT, PAYPAY_ICON_URL, PAYPAY_LINK_REGEX
 from bot import bot
 from decimal import Decimal, ROUND_HALF_UP
 from PayPaython_mobile.main import PayPayError
-from utils import send_paypay_log, create_embed
+from utils.logs import send_paypay_log
+from utils.embed import create_embed
 
 @bot.tree.command(name="kouza", description="口座を開設")
 async def kouza(interaction: discord.Interaction):

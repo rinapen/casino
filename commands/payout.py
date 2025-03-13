@@ -5,7 +5,7 @@ from paypay_session import paypay_session
 from config import MIN_INITIAL_DEPOSIT
 from bot import bot
 from decimal import Decimal, ROUND_HALF_UP
-from utils import create_embed
+from utils.embed import create_embed
 
 @bot.tree.command(name="payout", description="指定した額を引き出し（PayPayに送金）")
 @app_commands.describe(amount="出金額（手数料は自動計算）")

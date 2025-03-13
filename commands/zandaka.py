@@ -2,7 +2,7 @@ import discord
 from discord import app_commands
 from database.db import users_collection, user_transactions_collection, get_user_balance
 from bot import bot
-from utils import create_embed
+from utils.embed import create_embed
 import datetime
 
 @bot.tree.command(name="zandaka", description="口座残高を表示")

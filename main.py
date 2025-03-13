@@ -6,8 +6,8 @@ import pytz
 import matplotlib.pyplot as plt
 from discord.ext import tasks
 from bot import bot
-from database import user_transactions_collection, users_collection
-from utils import get_total_pnc, get_daily_profit, get_monthly_revenue
+from database.db import user_transactions_collection, users_collection
+from utils.pnc import get_total_pnc, get_daily_profit, get_monthly_revenue
 import commands
 
 JST = pytz.timezone("Asia/Tokyo")
@@ -31,9 +31,9 @@ async def send_daily_report():
             description=f"**{today}** のカジノ収益レポート",
             color=discord.Color.gold()
         )
-        embed.add_field(name="本日の利益", value=f"`{daily_profit:,} pnc`", inline=False)
-        embed.add_field(name="1ヶ月の総収益", value=f"`{monthly_revenue:,} pnc`", inline=False)
-        embed.add_field(name="全ユーザー保有PNC", value=f"`{total_pnc:,} pnc`", inline=False)
+        embed.add_field(name="本日の利益", value=f"`{daily_profit:,} PNC`", inline=False)
+        embed.add_field(name="1ヶ月の総収益", value=f"`{monthly_revenue:,} PNC`", inline=False)
+        embed.add_field(name="全ユーザー保有PNC", value=f"`{total_pnc:,} PNC`", inline=False)
         embed.set_footer(text="自動送信 - 日次カジノレポート")
 
         await channel.send(embed=embed)

@@ -37,30 +37,62 @@ def update_user_balance(user_id, amount):
     )
 
 def update_user_streak(user_id, game_type, is_win):
-    """ユーザーの連勝・連敗記録を更新"""
-    if is_win:
-        users_collection.update_one(
-            {"user_id": user_id},
-            {
-                "$inc": {"win_streak": 1, "lose_streak": -1},
-                "$max": {"win_streak": 0}  # 負の数にならないようにする
-            },
-            upsert=True
-        )
-    else:
-        users_collection.update_one(
-            {"user_id": user_id},
-            {
-                "$inc": {"win_streak": -1, "lose_streak": 1},
-                "$max": {"lose_streak": 0}  # 負の数にならないようにする
-            },
-            upsert=True
-        )
+    """勝敗の連勝・連敗データを更新"""
+    user_data = users_collection.find_one({"user_id": user_id})
 
+    if not user_data:
+        users_collection.insert_one({
+            "user_id": user_id,
+            "streaks": {game_type: {"win_streak": 0, "lose_streak": 0}}
+        })
+        user_data = users_collection.find_one({"user_id": user_id})
+
+    # 既存の streak データを取得
+    streak_data = user_data.get("streaks", {}).get(game_type, {"win_streak": 0, "lose_streak": 0})
+    win_streak = streak_data.get("win_streak", 0)
+    lose_streak = streak_data.get("lose_streak", 0)
+
+    # 勝ちの場合：win_streak を増やし、lose_streak をリセット
+    if is_win:
+        win_streak += 1
+        lose_streak = 0
+    else:
+        lose_streak += 1
+        win_streak = 0
+
+    # 更新クエリ
+    users_collection.update_one(
+        {"user_id": user_id},
+        {"$set": {f"streaks.{game_type}.win_streak": win_streak, f"streaks.{game_type}.lose_streak": lose_streak}},
+        upsert=True
+    )
 def get_user_streaks(user_id, game_type):
-    """ユーザーの連勝・連敗記録を取得"""
-    user = users_collection.find_one({"user_id": user_id}, {"win_streak": 1, "lose_streak": 1})
-    return user.get("win_streak", 0), user.get("lose_streak", 0)
+    """ゲームタイプごとのユーザーの連勝・連敗記録を取得"""
+    user = users_collection.find_one({"user_id": user_id}, {"streaks": 1})  # `streaks` フィールドのみ取得
+    
+    if not user or "streaks" not in user:
+        return 0, 0  # データがない場合は (0, 0) を返す
+
+    # ゲームタイプごとの streak を取得
+    game_streaks = user.get("streaks", {}).get(game_type, {})
+
+    return game_streaks.get("win_streak", 0), game_streaks.get("lose_streak", 0)
+
+def update_bet_history(user_id, game_type, amount, is_win):
+    """ユーザーのベット履歴をデータベースに記録"""
+
+    bet_entry = {
+        "amount": amount,
+        "is_win": bool(is_win),  # ✅ `bool` に変換
+        "timestamp": datetime.datetime.now()
+    }
+
+    bet_history_collection.update_one(
+        {"user_id": user_id},
+        {"$push": {f"bet_history.{game_type}.bets": bet_entry}},
+        upsert=True
+    )
+
 
 def register_user(user_id, username, sender_external_id):
     users_collection.update_one(

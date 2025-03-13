@@ -1,6 +1,6 @@
 from PayPaython_mobile import PayPay
 from config import PAYPAY_PHONE, PAYPAY_PASSWORD
-from database import get_tokens, save_tokens
+from database.db import get_tokens, save_tokens
 
 class PayPaySession:
     def __init__(self):
