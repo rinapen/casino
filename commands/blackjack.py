@@ -5,6 +5,8 @@ from bot import bot
 from database.db import get_user_balance, update_user_balance, get_user_streaks, update_user_streak
 from utils.embed import create_embed
 from utils.logs import send_casino_log
+from utils.stats import log_transaction, get_user_net_profit
+
 from config import WIN_EMOJI, LOSE_EMOJI, DRAW_EMOJI, CARD_EMOJIS
 
 BASE_COLOR_CODE = 0x2b2d31
@@ -54,10 +56,22 @@ class BlackjackGame:
     def __init__(self, user_id, bet, win_streak):
         self.user_id = user_id
         self.bet = bet
-        self.win_streak = win_streak  
+        self.win_streak = win_streak
         self.player_hand = [draw_card(), draw_card()]
         self.dealer_hand = [draw_card(), draw_card()]
         self.finished = False
+
+        try:
+            profit = get_user_net_profit(user_id, "blackjack", days=7)
+        except:
+            profit = 0
+
+        self.bias = 0
+        if profit > 3000:
+            self.bias = -0.15  # 勝ちすぎてる → 勝率下げる
+        elif profit < -2000:
+            self.bias = +0.15  # 負けすぎてる → 勝率上げる
+
 
     def hit(self):
         """プレイヤーがヒットする（バースト確率を大幅調整）"""
@@ -273,17 +287,22 @@ class BlackjackView(discord.ui.View):
             emoji = LOSE_EMOJI
             color = discord.Color.red()
 
-        # **ゲーム終了処理**
         await end_blackjack_game(interaction, game, result, payout, color, emoji)
 
 async def end_blackjack_game(interaction, game, result, payout, color, emoji):
     user_id = game.user_id
 
-    # ✅ **勝敗データを更新**
     if result == "win":
-        update_user_streak(user_id, "blackjack", True)  # 連勝更新
-    elif result == "lose" or result == "bust":
-        update_user_streak(user_id, "blackjack", False)  # 連敗更新
+        update_user_streak(user_id, "blackjack", True)
+    elif result in ["lose", "bust"]:
+        update_user_streak(user_id, "blackjack", False)
+
+    if result == "win":
+        log_transaction(user_id, "blackjack", game.bet, payout)
+    elif result == "draw":
+        log_transaction(user_id, "blackjack", game.bet, game.bet)
+    else:
+        log_transaction(user_id, "blackjack", game.bet, 0)
 
     balance = get_user_balance(user_id)
     await send_casino_log(interaction, emoji, abs(payout), "", color)

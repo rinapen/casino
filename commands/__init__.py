@@ -7,5 +7,5 @@ from .send import *
 # from .slot import *
 from .roulette import *
 # from .gamble import *
-# from .blackjack import *
+from .blackjack import *
 from .mines import *
