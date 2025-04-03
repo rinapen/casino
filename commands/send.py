@@ -1,9 +1,10 @@
 import discord
 from discord import app_commands
 from bot import bot
-from database.db import get_user_balance, update_user_balance, log_transaction
+from database.db import get_user_balance, update_user_balance
 from config import TAX_RATE, FEE_RATE
 from utils.embed import create_embed
+from utils.stats import log_transaction
 
 @bot.tree.command(name="send", description="他のユーザーに送金")
 @app_commands.describe(amount="送金額", recipient="送金相手のユーザー")
@@ -39,7 +40,12 @@ async def send(interaction: discord.Interaction, amount: int, recipient: discord
 
     update_user_balance(user_id, -total_deduction)
     update_user_balance(recipient_id, amount)
-    log_transaction(user_id, "send", amount, fee, total_deduction, recipient_id)
+    log_transaction(
+        user_id=user_id,
+        game_type="send",
+        amount=total_deduction,
+        payout=amount            
+    )
 
     embed = discord.Embed(title="🔄 送金完了", color=discord.Color.blue())
     embed.add_field(name="送金額", value=f"{amount} PNC", inline=False)

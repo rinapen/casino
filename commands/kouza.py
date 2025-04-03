@@ -1,7 +1,7 @@
 import discord
 import re
 from discord import app_commands
-from database.db import update_user_balance, users_collection, log_transaction, register_user
+from database.db import update_user_balance, register_user, users_collection, user_transactions_collection
 from paypay_session import paypay_session
 from config import MIN_INITIAL_DEPOSIT, PAYPAY_ICON_URL, PAYPAY_LINK_REGEX
 from bot import bot
@@ -9,6 +9,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from PayPaython_mobile.main import PayPayError
 from utils.logs import send_paypay_log
 from utils.embed import create_embed
+from utils.stats import log_transaction
 
 @bot.tree.command(name="kouza", description="口座を開設")
 async def kouza(interaction: discord.Interaction):
@@ -59,9 +60,18 @@ class RegisterModal(discord.ui.Modal, title="口座開設"):
             return
 
         user = paypay_session.paypay.link_receive(self.deposit_link.value)
+        user_transactions_collection.insert_one({
+            "user_id": user_id,
+            "transactions": []
+        })
         register_user(user_id,  self.username.value, deposit_info.sender_external_id)
         update_user_balance(user_id, int(net_amount))
-        log_transaction(user_id, "in", int(amount), int(fee), int(net_amount))
+        log_transaction(
+            user_id=user_id,
+            game_type="payin",
+            amount=int(amount),
+            payout=int(net_amount)
+        )
         embed = discord.Embed(title="口座開設完了", color=discord.Color.green())
         embed.set_author(name="PayPay",icon_url=PAYPAY_ICON_URL)
         # embed.set_image(url=profile.icon)

@@ -23,8 +23,7 @@ class MinesGame:
         self.revealed = set()
         self.finished = False
 
-        # **地雷の数が増えると、元の掛け金に戻るまでの回数が増える**
-        self.base_reward = bet / (5 + self.mine_count / 5)  # 地雷が多いと原価回収に必要な回数が増える
+        self.base_reward = bet / (5 + self.mine_count / 5)
         self.current_reward = 0  
         self.payout_multiplier = 1.0
         self.consecutive_wins = 0
@@ -43,7 +42,6 @@ class MinesGame:
         self.grid[x][y] = "💎"
         self.consecutive_wins += 1
 
-        # **地雷の数が多いほど倍率の上昇が速くなる**
         self.payout_multiplier = 1.0 + (0.01 + self.mine_count * 0.008) * self.consecutive_wins  
         self.current_reward = self.base_reward * self.payout_multiplier * self.consecutive_wins
 
@@ -55,7 +53,7 @@ class MinesGame:
         if self.finished:
             return None
         self.finished = True
-        return round(self.current_reward)  # 獲得額をそのまま返す
+        return round(self.current_reward)
 
 
 def create_mines_embed(game, reveal_all=False, result=None, payout=None):
@@ -190,15 +188,15 @@ async def end_mines_game(interaction, game, result, payout):
 
     for child in view.children:
         if isinstance(child, MinesButton):
-            child.disabled = True  # すべてのボタンを押せなくする
+            child.disabled = True
             if (child.x, child.y) in game.mines:
-                child.style = discord.ButtonStyle.danger  # 💣 は赤色
+                child.style = discord.ButtonStyle.danger 
                 child.label = "💣"
             elif (child.x, child.y) in game.revealed:
-                child.style = discord.ButtonStyle.success  # 押したダイヤは緑
+                child.style = discord.ButtonStyle.success
                 child.label = "💎"
             else:
-                child.style = discord.ButtonStyle.primary  # 未発見のダイヤは青
+                child.style = discord.ButtonStyle.primary 
                 child.label = "💎"
 
     try:
@@ -206,7 +204,6 @@ async def end_mines_game(interaction, game, result, payout):
     except discord.errors.InteractionResponded:
         await interaction.message.edit(embed=embed, view=view)
 
-    # **出金ボタンのメッセージを編集**
     if hasattr(game, "cashout_message_id"):
         cashout_embed = discord.Embed(
             title="💰 PNC 出金",
@@ -214,14 +211,13 @@ async def end_mines_game(interaction, game, result, payout):
             color=discord.Color.red() if game.finished else discord.Color.gold()
         )
 
-        # **負けたら出金ボタンを無効化**
         cashout_view = discord.ui.View()
         cashout_view.add_item(CashoutButton(game.user_id, game, disabled=True))
 
         try:
             await interaction.followup.edit_message(game.cashout_message_id, embed=cashout_embed, view=cashout_view)
         except discord.errors.NotFound:
-            pass  # メッセージが見つからない場合は無視
+            pass
 
 @bot.tree.command(name="mines", description="💣 マインズをプレイ！")
 @app_commands.describe(amount="ベット額", mines="地雷の数（選択肢から選択）")
@@ -238,7 +234,6 @@ async def mines(interaction: discord.Interaction, amount: int, mines: int):
         await interaction.response.send_message("❌ **残高不足！**", ephemeral=True)
         return
 
-    # **ベット額を即座に差し引く**
     update_user_balance(user_id, -amount)
 
     games[user_id] = MinesGame(user_id, amount, mines)
@@ -249,7 +244,6 @@ async def mines(interaction: discord.Interaction, amount: int, mines: int):
 
     await interaction.response.send_message(embed=embed, view=view)
 
-    # **出金ボタンを別メッセージで送信**
     cashout_embed = discord.Embed(
         title="💰 PNC 出金",
         description="現在のPNCを引き出す場合はボタンを押してください。",
@@ -259,6 +253,5 @@ async def mines(interaction: discord.Interaction, amount: int, mines: int):
     cashout_view = discord.ui.View()
     cashout_view.add_item(CashoutButton(user_id, game, disabled=False))
 
-    # **メッセージを送信して `message_id` を記録**
     cashout_message = await interaction.followup.send(embed=cashout_embed, view=cashout_view)
-    game.cashout_message_id = cashout_message.id  # メッセージIDを保存
+    game.cashout_message_id = cashout_message.id  

@@ -1,7 +1,7 @@
 import discord
 import re
 from discord import app_commands
-from database.db import log_transaction, update_user_balance, get_user_balance, users_collection
+from database.db import update_user_balance, get_user_balance, users_collection
 from paypay_session import paypay_session
 from config import MIN_INITIAL_DEPOSIT, PAYPAY_LINK_REGEX
 from bot import bot
@@ -9,7 +9,8 @@ from decimal import Decimal, ROUND_HALF_UP
 from PayPaython_mobile.main import PayPayError
 from utils.logs import send_paypay_log
 from utils.embed import create_embed
-
+from utils.stats import log_transaction
+        
 @bot.tree.command(name="payin", description="自分の口座に残高を追加")
 @app_commands.describe(link="PayPayリンクを入力してください")
 async def payin(interaction: discord.Interaction, link: str):
@@ -55,9 +56,14 @@ async def payin(interaction: discord.Interaction, link: str):
 
     try:
         paypay_session.paypay.link_receive(link)
-
         update_user_balance(user_id, int(net_amount))
-        log_transaction(user_id, "in", int(amount), int(fee), int(net_amount))
+        
+        log_transaction(
+            user_id=user_id,
+            game_type="payin",
+            amount=int(amount),
+            payout=int(net_amount)
+        )
 
         embed = discord.Embed(title="入金完了", color=discord.Color.green())
         embed.add_field(name="入金額", value=f"`{int(amount):,}円`", inline=True)

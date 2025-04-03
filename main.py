@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from bot import bot
 from utils.pnc import get_total_pnc, get_daily_profit, get_monthly_revenue
 import asyncio
-
+import commands
 
 JST = pytz.timezone("Asia/Tokyo")
 
@@ -23,7 +23,6 @@ async def daily_report_task():
 async def send_daily_report(target_date: str = None):
     """📝 指定した日のカジノ収益レポートを送信（デフォルトは昨日）"""
 
-    # **日付のデフォルト値（昨日）**
     if target_date is None:
         now = datetime.datetime.now(JST)
         target_date = (now - timedelta(days=1)).strftime("%Y-%m-%d")
@@ -50,25 +49,6 @@ async def send_daily_report(target_date: str = None):
         embed.set_footer(text="⏳ 自動送信 - カジノレポート")
 
         await channel.send(embed=embed)
-
-
-@bot.tree.command(name="daily_report", description="📊 指定した日のカジノ収益レポートを送信")
-@app_commands.describe(target_date="YYYY-MM-DD の形式で日付を入力してください")
-async def manual_daily_report(interaction: discord.Interaction, target_date: str):
-    """📌 指定した日付のカジノレポートを手動送信"""
-
-    try:
-        datetime.datetime.strptime(target_date, "%Y-%m-%d")
-    except ValueError:
-        await interaction.response.send_message(
-            "❌ **日付の形式が正しくありません！**\n`YYYY-MM-DD` の形式で入力してください。",
-            ephemeral=True
-        )
-        return
-
-    await interaction.response.send_message(f"📤 **{target_date} のレポートを送信中...**", ephemeral=True)
-    await send_daily_report(target_date)
-    await interaction.followup.send(f"✅ **{target_date} のカジノレポートを送信しました！**", ephemeral=True)
 
 def create_profit_graph(target_date):
     """📈 指定した日の利益グラフを作成し保存"""
@@ -117,6 +97,8 @@ async def main():
     asyncio.create_task(keep_alive())  # ✅ `create_task()` を `async` 関数内で実行
     await bot.start(config.TOKEN)  # ✅ `bot.run()` を `await bot.start()` に変更
 
-# **Python スクリプトのエントリーポイント**
 if __name__ == "__main__":
-    asyncio.run(main())  # ✅ `asyncio.run()` を使用して `main()` を起動
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("👋 ボットの実行を中断しました。終了します。")

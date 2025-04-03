@@ -6,6 +6,7 @@ from config import MIN_INITIAL_DEPOSIT
 from bot import bot
 from decimal import Decimal, ROUND_HALF_UP
 from utils.embed import create_embed
+from utils.stats import log_transaction
 
 @bot.tree.command(name="payout", description="指定した額を引き出し（PayPayに送金）")
 @app_commands.describe(amount="出金額（手数料は自動計算）")
@@ -54,9 +55,14 @@ async def payout(interaction: discord.Interaction, amount: int):
         return
 
     paypay_session.send_money(int(amount), sender_external_id)
-
     update_user_balance(user_id, -int(total_deduction))
-    log_transaction(user_id, "out", int(amount), int(fee), int(total_deduction), sender_external_id)
+
+    log_transaction(
+        user_id=user_id,
+        game_type="payout",
+        amount=int(total_deduction),  
+        payout=int(amount)            
+    )
 
     embed = discord.Embed(title="出金完了", color=discord.Color.green())
     embed.add_field(name="出金額", value=f"`{int(amount):,}円`", inline=False)

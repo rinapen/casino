@@ -1,6 +1,7 @@
 import pymongo
 import config
 import datetime
+from datetime import timedelta
 
 client = pymongo.MongoClient(config.MONGO_URI)
 db = client[config.DB_NAME]
@@ -47,12 +48,10 @@ def update_user_streak(user_id, game_type, is_win):
         })
         user_data = users_collection.find_one({"user_id": user_id})
 
-    # 既存の streak データを取得
     streak_data = user_data.get("streaks", {}).get(game_type, {"win_streak": 0, "lose_streak": 0})
     win_streak = streak_data.get("win_streak", 0)
     lose_streak = streak_data.get("lose_streak", 0)
 
-    # 勝ちの場合：win_streak を増やし、lose_streak をリセット
     if is_win:
         win_streak += 1
         lose_streak = 0
@@ -60,7 +59,6 @@ def update_user_streak(user_id, game_type, is_win):
         lose_streak += 1
         win_streak = 0
 
-    # 更新クエリ
     users_collection.update_one(
         {"user_id": user_id},
         {"$set": {f"streaks.{game_type}.win_streak": win_streak, f"streaks.{game_type}.lose_streak": lose_streak}},
@@ -71,9 +69,8 @@ def get_user_streaks(user_id, game_type):
     user = users_collection.find_one({"user_id": user_id}, {"streaks": 1})  # `streaks` フィールドのみ取得
     
     if not user or "streaks" not in user:
-        return 0, 0  # データがない場合は (0, 0) を返す
+        return 0, 0
 
-    # ゲームタイプごとの streak を取得
     game_streaks = user.get("streaks", {}).get(game_type, {})
 
     return game_streaks.get("win_streak", 0), game_streaks.get("lose_streak", 0)
@@ -105,20 +102,23 @@ def register_user(user_id, username, sender_external_id):
         upsert=True
     )
 
-def log_transaction(user_id, type, amount, fee, total, receiver=None):
-    """ ユーザーの取引履歴を `transactions` にリスト形式で記録 (JST対応) """
-    now = datetime.datetime.now()
-    transaction = {
-        "type": type,  # "in", "out", "send"
-        "amount": amount,
-        "fee": fee,
-        "total": total,
-        "receiver": receiver,
-        "timestamp": now  # **JST（日本標準時）**
-    }
+def get_user_transactions(user_id: int, game_type: str = None, days: int = None):
+    """指定ユーザーの取引履歴を取得（オプションでゲーム種別や期間も絞れる）"""
+    doc = user_transactions_collection.find_one({"user_id": user_id})
 
-    user_transactions_collection.update_one(
-        {"user_id": user_id},
-        {"$push": {"transactions": transaction}}, 
-        upsert=True
-    )
+    if not doc or "transactions" not in doc:
+        return []
+
+    transactions = doc["transactions"]
+
+    if game_type:
+        transactions = [t for t in transactions if t.get("type") == game_type]
+
+    if days:
+        threshold = datetime.datetime.now() - timedelta(days=days)
+        transactions = [t for t in transactions if t.get("timestamp") and t["timestamp"] >= threshold]
+
+    return transactions
+
+# def kinkyu():
+#     user_transactions_collection.delete_many({})

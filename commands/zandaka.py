@@ -25,11 +25,9 @@ async def zandaka(interaction: discord.Interaction):
         for txn in reversed(transactions):
             type_emoji = "📥" if txn["type"] == "in" else "📤" if txn["type"] == "out" else "🔄"
 
-            # `txn["timestamp"]` が `str` 型なら int に変換
             if isinstance(txn["timestamp"], str):
                 txn["timestamp"] = int(txn["timestamp"])
 
-            # `txn["timestamp"]` が `datetime.datetime` 型なら `strftime()` を適用
             if isinstance(txn["timestamp"], datetime.datetime):
                 timestamp = txn["timestamp"].strftime('%Y-%m-%d %H:%M:%S')
             else:
