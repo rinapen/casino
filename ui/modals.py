@@ -19,8 +19,7 @@ from config import (
 )
 from utils.embed import create_embed
 from utils.pnc import jpy_to_pnc, pnc_to_jpy
-from utils.logs import send_paypay_log
-from utils.stats import log_transaction
+from utils.logs import send_paypay_log, log_transaction
 from utils.emojis import PNC_EMOJI_STR
 
 class LinkInputModal(discord.ui.Modal, title="送金リンクを入力"):
