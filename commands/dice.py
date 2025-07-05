@@ -8,10 +8,10 @@ from utils.embed import create_embed
 from utils.logs import send_casino_log
 from utils.color import BASE_COLOR_CODE
 from utils.emojis import PNC_EMOJI_STR, WIN_EMOJI
+from utils.embed_factory import EmbedFactory
 
 from ui.game.dice import ongoing_games
 from ui.game.dice import ContinueButton
-
 from config import DICE_FOLDER
 
 async def on_dice_command(message):
@@ -27,8 +27,9 @@ async def on_dice_command(message):
             return await message.channel.send(embed=embed)
 
         bet_amount = int(args[1])
-        if bet_amount < 50:
-            embed = create_embed("", "ベット額は50以上にしてください。", discord.Color.red())
+        min_bet = 50
+        if bet_amount < min_bet:
+            embed = EmbedFactory.bet_too_low(min_bet=min_bet)
             embed.set_author(
                 name=f"{message.author.name}",
                 icon_url=message.author.display_avatar.url
@@ -38,11 +39,11 @@ async def on_dice_command(message):
         user_id = message.author.id
         balance = get_user_balance(user_id)
         if balance is None:
-            embed = create_embed("", "あなたはアカウントを紐づけていません。<#1379480186164088905>のパネルから登録してください。", discord.Color.red())
+            embed = EmbedFactory.not_registered()
             await message.channel.send(embed=embed)
             return
         if bet_amount > balance:
-            embed = create_embed("", f"残高不足。\n### {PNC_EMOJI_STR}`{balance:,}`", discord.Color.red())
+            embed = EmbedFactory.insufficient_balance(balance=balance)
             embed.set_author(
                 name=f"{message.author.name}",
                 icon_url=message.author.display_avatar.url
