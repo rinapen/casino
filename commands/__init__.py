@@ -7,6 +7,7 @@ from .mines import on_mines_command
 from .flip import on_coinflip_command
 from .blackjack import on_blackjack_command
 from .dice import on_dice_command
+from .hitandblow import on_hitandblow_command
 # from .rps import on_rps_command
 
 TEXT_COMMANDS = {
@@ -17,6 +18,7 @@ TEXT_COMMANDS = {
     "$フリップ": on_coinflip_command,
     "$ダイス": on_dice_command,
     "$bj": on_blackjack_command,
+    "$ヒットアンドブロー": on_hitandblow_command,
     # "$じゃんけん": on_rps_command
 }
 
