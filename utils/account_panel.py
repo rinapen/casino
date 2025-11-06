@@ -31,8 +31,8 @@ async def setup_account_panel():
             description="### 以下のボタンから登録、入金を行えます。",
             color=discord.Color.blurple()
         )
-        embed.add_field(name="登録", value="初めての方は、こちらからアカウントを紐づけてください。", inline=False)
-        embed.add_field(name="入金", value="紐づけ済みの方は、こちらから入金してください。", inline=False)
+        embed.add_field(name="登録", value="初めての方は、こちらからアカウントを紐付けてください。", inline=False)
+        embed.add_field(name="入金", value="紐付け済みの方は、こちらから入金してください。", inline=False)
 
         new_msg = await channel.send(embed=embed, view=AccountView())
         await save_account_panel_message_id(new_msg.id)

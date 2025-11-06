@@ -35,7 +35,7 @@ async def on_transfer_command(message: discord.Message):
         await message.channel.send(embed=embed)
         return
     if recipient_balance is None:
-        embed = create_embed("", "受取人がまだアカウントを紐づけていません。", discord.Color.red())
+        embed = create_embed("", "受取人がまだアカウントを紐付けていません。", discord.Color.red())
         await message.channel.send(embed=embed)
         return
 

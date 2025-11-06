@@ -56,7 +56,7 @@ class RegisterButton(discord.ui.Button):
 
         if users_collection.find_one({"user_id": user_id}):
             await interaction.response.send_message(
-                embed=create_embed("登録済みです", "あなたはすでにアカウントを紐づけています。", discord.Color.red()),
+                embed=create_embed("登録済みです", "あなたはすでにアカウントを紐付けています。", discord.Color.red()),
                 ephemeral=True
             )
             return

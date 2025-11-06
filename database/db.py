@@ -61,6 +61,7 @@ invites_collection = get_collection("invites")
 invite_redeem_collection = get_collection("invite_redeem")
 active_users_collection = get_collection("active_users")
 pf_collection = get_collection("pf_params")
+casino_tables_collection = get_collection("casino_tables")
 
 # ========================================
 # Provably Fair関連
@@ -329,3 +330,74 @@ def is_no_fee_mode_enabled() -> bool:
     """手数料無料モードが有効かチェック"""
     config_doc = payin_settings_collection.find_one({"_id": "conversion_rate"})
     return config_doc and config_doc.get("no_fee_mode", False)
+
+
+# ========================================
+# カジノテーブル管理
+# ========================================
+def save_casino_table(
+    channel_id: int,
+    category_id: int,
+    table_number: int,
+    channel_name: str,
+    category_name: str
+) -> None:
+    """
+    カジノテーブル情報をデータベースに保存
+    
+    Args:
+        channel_id: チャンネルID
+        category_id: カテゴリID
+        table_number: テーブル番号
+        channel_name: チャンネル名
+        category_name: カテゴリ名
+    """
+    casino_tables_collection.insert_one({
+        "channel_id": channel_id,
+        "category_id": category_id,
+        "table_number": table_number,
+        "channel_name": channel_name,
+        "category_name": category_name,
+        "created_at": datetime.datetime.now()
+    })
+
+
+def get_all_casino_tables() -> list[dict[str, Any]]:
+    """
+    全カジノテーブル情報を取得
+    
+    Returns:
+        テーブル情報のリスト
+    """
+    return list(casino_tables_collection.find({}))
+
+
+def delete_casino_table(channel_id: int) -> None:
+    """
+    カジノテーブル情報をデータベースから削除
+    
+    Args:
+        channel_id: チャンネルID
+    """
+    casino_tables_collection.delete_one({"channel_id": channel_id})
+
+
+def clear_all_casino_tables() -> int:
+    """
+    全カジノテーブル情報をデータベースから削除
+    
+    Returns:
+        削除された件数
+    """
+    result = casino_tables_collection.delete_many({})
+    return result.deleted_count
+
+
+def get_casino_table_count() -> int:
+    """
+    登録されているカジノテーブルの総数を取得
+    
+    Returns:
+        テーブル数
+    """
+    return casino_tables_collection.count_documents({})

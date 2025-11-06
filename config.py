@@ -9,11 +9,74 @@ import pytz
 
 load_dotenv()
 
+
+# ========================================
+# ヘルパー関数
+# ========================================
+def safe_get_int_env(key: str, default: int = 0) -> int:
+    """
+    環境変数を安全に整数として取得
+    
+    Args:
+        key: 環境変数名
+        default: デフォルト値
+    
+    Returns:
+        環境変数の値（整数）、無効な場合はデフォルト値
+    """
+    value = os.getenv(key)
+    
+    if not value or value.startswith("your_") or value.startswith("YOUR_"):
+        if value:
+            print(f"[WARN] 環境変数 {key} が設定されていません（プレースホルダー値: {value}）。デフォルト値 {default} を使用します。")
+        else:
+            print(f"[WARN] 環境変数 {key} が設定されていません。デフォルト値 {default} を使用します。")
+        return default
+    
+    try:
+        return int(value)
+    except ValueError:
+        print(f"[WARN] 環境変数 {key} の値 '{value}' が無効です。デフォルト値 {default} を使用します。")
+        return default
+
+
+def safe_get_str_env(key: str, default: str | None = None) -> str | None:
+    """
+    環境変数を安全に文字列として取得
+    
+    Args:
+        key: 環境変数名
+        default: デフォルト値
+    
+    Returns:
+        環境変数の値、無効な場合はデフォルト値
+    """
+    value = os.getenv(key)
+    
+    if not value or value.startswith("your_") or value.startswith("YOUR_"):
+        if value:
+            print(f"[WARN] 環境変数 {key} が設定されていません（プレースホルダー値: {value}）。デフォルト値を使用します。")
+        else:
+            print(f"[WARN] 環境変数 {key} が設定されていません。デフォルト値を使用します。")
+        return default
+    
+    return value
+
 # ========================================
 # データベース設定
 # ========================================
-MONGO_URI: Final[str] = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
-DB_NAME: Final[str] = os.getenv("DB_NAME", "paypay_bot")
+def safe_get_mongo_uri() -> str:
+    """MongoDB URIを安全に取得"""
+    value = safe_get_str_env("MONGO_URI", "mongodb://localhost:27017/")
+    return value if value else "mongodb://localhost:27017/"
+
+def safe_get_db_name() -> str:
+    """データベース名を安全に取得"""
+    value = safe_get_str_env("DB_NAME", "paypay_bot")
+    return value if value else "paypay_bot"
+
+MONGO_URI: Final[str] = safe_get_mongo_uri()
+DB_NAME: Final[str] = safe_get_db_name()
 
 # コレクション名
 TOKENS_COLLECTION: Final[str] = os.getenv("TOKENS_COLLECTION", "tokens")
@@ -52,10 +115,10 @@ DICE_FOLDER: Final[str] = "assets/dice"
 # ========================================
 # Discord設定
 # ========================================
-GUILD_ID: Final[int] = int(os.getenv("GUILD_ID", "0"))
-ACCOUNT_CHANNEL_ID: Final[int] = int(os.getenv("ACCOUNT_CHANNEL_ID", "0"))
-INVITE_PANEL_CHANNEL_ID: Final[int] = int(os.getenv("INVITE_PANEL_CHANNEL_ID", "0"))
-HITANDBLOW_CATEGORY_ID: Final[int] = int(os.getenv("HITANDBLOW_CATEGORY_ID", "0"))
+GUILD_ID: Final[int] = safe_get_int_env("GUILD_ID", 0)
+ACCOUNT_CHANNEL_ID: Final[int] = safe_get_int_env("ACCOUNT_CHANNEL_ID", 0)
+INVITE_PANEL_CHANNEL_ID: Final[int] = safe_get_int_env("INVITE_PANEL_CHANNEL_ID", 0)
+HITANDBLOW_CATEGORY_ID: Final[int] = safe_get_int_env("HITANDBLOW_CATEGORY_ID", 0)
 
 # ========================================
 # アセットURL
@@ -105,28 +168,64 @@ IS_PRODUCTION_MODE: Final[bool] = ENVIRONMENT.lower() == "production"
 # ========================================
 # 認証情報（環境変数から取得）
 # ========================================
-TOKEN: Final[str | None] = os.getenv("DISCORD_BOT_TOKEN")
+TOKEN: Final[str | None] = safe_get_str_env("DISCORD_BOT_TOKEN")
+if not TOKEN:
+    print("[ERROR] DISCORD_BOT_TOKEN が設定されていません。ボットは起動できませんが、設定チェックは続行します。")
 
 # PayPay設定（本番環境のみ使用）
-PAYPAY_PHONE_NUMBER: Final[str | None] = os.getenv("PAYPAY_PHONE_NUMBER") if IS_PRODUCTION_MODE else None
-PAYPAY_PIN: Final[str | None] = os.getenv("PAYPAY_PIN") if IS_PRODUCTION_MODE else None
+PAYPAY_PHONE_NUMBER: Final[str | None] = (
+    safe_get_str_env("PAYPAY_PHONE_NUMBER") if IS_PRODUCTION_MODE else None
+)
+PAYPAY_PIN: Final[str | None] = (
+    safe_get_str_env("PAYPAY_PIN") if IS_PRODUCTION_MODE else None
+)
 
 # ========================================
 # 管理者・除外ユーザーID
 # ========================================
-ADMIN_USER_ID: Final[int | None] = int(os.getenv("ADMIN_USER_ID")) if os.getenv("ADMIN_USER_ID") else None
+def safe_get_admin_user_id() -> int | None:
+    """管理者ユーザーIDを安全に取得"""
+    value = os.getenv("ADMIN_USER_ID")
+    
+    if not value or value.startswith("your_") or value.startswith("YOUR_"):
+        if value:
+            print(f"[WARN] 環境変数 ADMIN_USER_ID が設定されていません（プレースホルダー値: {value}）。管理者機能が無効化されます。")
+        else:
+            print(f"[WARN] 環境変数 ADMIN_USER_ID が設定されていません。管理者機能が無効化されます。")
+        return None
+    
+    try:
+        return int(value)
+    except ValueError:
+        print(f"[WARN] 環境変数 ADMIN_USER_ID の値 '{value}' が無効です。管理者機能が無効化されます。")
+        return None
 
-# 統計から除外するユーザーID（カンマ区切り）
-EXCLUDED_USER_IDS_STR: Final[str] = os.getenv("EXCLUDED_USER_IDS", "")
-EXCLUDED_USER_IDS: Final[list[int]] = [
-    int(uid.strip()) for uid in EXCLUDED_USER_IDS_STR.split(",") if uid.strip()
-] if EXCLUDED_USER_IDS_STR else []
+ADMIN_USER_ID: Final[int | None] = safe_get_admin_user_id()
+
+
+def safe_get_excluded_user_ids() -> list[int]:
+    """除外ユーザーIDリストを安全に取得"""
+    value = os.getenv("EXCLUDED_USER_IDS", "")
+    
+    if not value or value.startswith("your_") or value.startswith("YOUR_"):
+        if value:
+            print(f"[WARN] 環境変数 EXCLUDED_USER_IDS が設定されていません（プレースホルダー値: {value}）。除外ユーザーなしで動作します。")
+        return []
+    
+    try:
+        ids = [int(uid.strip()) for uid in value.split(",") if uid.strip()]
+        return ids
+    except ValueError as e:
+        print(f"[WARN] 環境変数 EXCLUDED_USER_IDS の値 '{value}' が無効です。除外ユーザーなしで動作します。エラー: {e}")
+        return []
+
+EXCLUDED_USER_IDS: Final[list[int]] = safe_get_excluded_user_ids()
 
 # ========================================
 # ログチャンネルID（環境変数から取得）
 # ========================================
-CASINO_LOG_CHANNEL_ID: Final[str | None] = os.getenv("CASINO_LOG_CHANNEL_ID")
-PAYIN_LOG_CHANNEL_ID: Final[str | None] = os.getenv("PAYIN_LOG_CHANNEL_ID")
-PAYOUT_LOG_CHANNEL_ID: Final[str | None] = os.getenv("PAYOUT_LOG_CHANNEL_ID")
-RANKING_CHANNEL_ID: Final[str | None] = os.getenv("RANKING_CHANNEL_ID")
-ADMIN_CHANNEL_ID: Final[str | None] = os.getenv("ADMIN_CHANNEL_ID")
+CASINO_LOG_CHANNEL_ID: Final[str | None] = safe_get_str_env("CASINO_LOG_CHANNEL_ID")
+PAYIN_LOG_CHANNEL_ID: Final[str | None] = safe_get_str_env("PAYIN_LOG_CHANNEL_ID")
+PAYOUT_LOG_CHANNEL_ID: Final[str | None] = safe_get_str_env("PAYOUT_LOG_CHANNEL_ID")
+RANKING_CHANNEL_ID: Final[str | None] = safe_get_str_env("RANKING_CHANNEL_ID")
+ADMIN_CHANNEL_ID: Final[str | None] = safe_get_str_env("ADMIN_CHANNEL_ID")

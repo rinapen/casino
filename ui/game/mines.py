@@ -6,7 +6,7 @@ import discord
 from database.db import get_user_balance, update_user_balance, save_pf_params
 from utils.stake_mines import get_stake_multiplier
 from utils.logs import send_casino_log, log_transaction
-from utils.emojis import MINE_EMOJI, DIAMOND_EMOJI, MINE_EMOJI_TEXT, DIAMOND_EMOJI_TEXT, PNC_EMOJI_STR, WIN_EMOJI, LOSE_EMOJI
+from utils.emojis import MINE_EMOJI, DIAMOND_EMOJI, MINE_EMOJI_TEXT, DIAMOND_EMOJI_TEXT, PNC_EMOJI_STR, WIN_EMOJI
 from utils.sys import generate_server_seed, hash_server_seed, get_hmac_sha256
 from utils.color import BASE_COLOR_CODE
 

@@ -19,6 +19,7 @@ import pytz
 from bot import bot
 from database.db import payin_settings_collection 
 from commands import register_all_text_commands
+from commands.table_management import setup_table_commands
 from config import GUILD_ID, JST
 import config
 from paypay_session import paypay_session
@@ -76,7 +77,7 @@ async def send_daily_report(target_date: Optional[str] = None) -> None:
     channel = bot.get_channel(int(config.ADMIN_CHANNEL_ID))
     if channel:
         embed = discord.Embed(
-            title="💰 カジノ収益レポート",
+            title="カジノ収益レポート",
             description=f"**{target_date} のカジノ利益状況**",
             color=discord.Color.gold()
         )
@@ -91,7 +92,7 @@ async def send_daily_report(target_date: Optional[str] = None) -> None:
         graph_path = create_monthly_profit_graph()
         file = discord.File(graph_path, filename="monthly_profit.png")
         graph_embed = discord.Embed(
-            title="📊 直近30日間のカジノ利益推移",
+            title="直近30日間のカジノ利益推移",
             color=discord.Color.blurple()
         )
         graph_embed.set_image(url="attachment://monthly_profit.png")
@@ -192,6 +193,9 @@ async def toggle_no_fee(interaction: discord.Interaction, mode: bool) -> None:
 async def on_ready() -> None:
     """ボット起動時の初期化処理"""
     print("[DEBUG] on_ready 実行開始")
+    
+    # テーブル管理コマンドをセットアップ
+    await setup_table_commands(bot)
     
     # スラッシュコマンドを同期
     await bot.tree.sync()

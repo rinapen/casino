@@ -176,8 +176,8 @@ def get_total_revenue() -> int:
             elif ttype == "payout":
                 total_profit -= amount
 
-    print(f"\n📊 処理完了: {user_count}人、payin {txn_count}件")
-    print(f"💰 カジノ全体の累計純利益: {total_profit:,}円")
+    print(f"\n処理完了: {user_count}人、payin {txn_count}件")
+    print(f"カジノ全体の累計純利益: {total_profit:,}円")
 
     return total_profit
 
@@ -225,7 +225,7 @@ def create_pnc_rank_pages(user_data: list[tuple[int, int]], per_page: int = 10) 
         start = i * per_page
         end = start + per_page
         embed = Embed(
-            title="💰 PNC保有ランキング",
+            title="PNC保有ランキング",
             description=f"全ユーザーの残高一覧（{i+1}/{total_pages}）",
             color=discord.Color.gold()
         )

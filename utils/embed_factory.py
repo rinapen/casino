@@ -19,7 +19,7 @@ class EmbedFactory:
     def require_registration_prompt():
         return create_embed(
             "",
-            f"あなたはアカウントを紐づけていません。<#{ACCOUNT_CHANNEL_ID}>のパネルから登録してください。",
+            f"あなたはアカウントを紐付けていません。<#{ACCOUNT_CHANNEL_ID}>のパネルから登録してください。",
             discord.Color.red()
         )
     
